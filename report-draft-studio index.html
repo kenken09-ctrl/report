@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0a0e1a">
+<title>DRAFT.LAB | レポート下書きスタジオ</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --panel: rgba(255,255,255,.04);
+    --panel-strong: rgba(255,255,255,.07);
+    --line: rgba(255,255,255,.10);
+    --text: #e8ecf5;
+    --muted: #8b95ad;
+    --a1: #7c5cff;
+    --a2: #22d3ee;
+    --grad: linear-gradient(135deg, var(--a1), var(--a2));
+    --danger: #fb7185;
+    --ok: #34d399;
+    --radius: 18px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: "Inter", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", system-ui, sans-serif;
+    background:
+      radial-gradient(900px 500px at 85% -10%, rgba(124,92,255,.28), transparent 60%),
+      radial-gradient(700px 420px at -10% 10%, rgba(34,211,238,.16), transparent 60%),
+      var(--bg);
+    background-attachment: fixed;
+    color: var(--text);
+    line-height: 1.75;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+  }
+  .wrap { max-width: 820px; margin: 0 auto; padding: 28px 16px 24px; }
+
+  /* header */
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .logo {
+    width: 34px; height: 34px; border-radius: 10px; background: var(--grad);
+    display: grid; place-items: center; font-weight: 800; color: #fff; font-size: 14px;
+    box-shadow: 0 6px 20px rgba(124,92,255,.45);
+  }
+  .brand span { font-weight: 800; letter-spacing: .12em; font-size: .95rem; }
+  h1 { font-size: clamp(1.5rem, 5.5vw, 2.2rem); line-height: 1.3; margin: 14px 0 8px; font-weight: 800; }
+  h1 em {
+    font-style: normal;
+    background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .lead { color: var(--muted); font-size: .92rem; margin: 0 0 22px; }
+
+  /* cards */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    margin-bottom: 18px;
+  }
+  label { display: block; font-size: .8rem; font-weight: 700; color: var(--muted); letter-spacing: .06em; margin-bottom: 7px; }
+  input[type="text"], input[type="number"], input[type="password"], select, textarea {
+    width: 100%;
+    background: rgba(0,0,0,.28);
+    border: 1px solid var(--line);
+    color: var(--text);
+    border-radius: 12px;
+    padding: 14px;
+    font-size: 16px; /* iOSの自動ズーム防止 */
+    font-family: inherit;
+    transition: border-color .15s, box-shadow .15s;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--a2);
+    box-shadow: 0 0 0 3px rgba(34,211,238,.18);
+  }
+  .row { display: grid; grid-template-columns: 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (min-width: 600px) { .row.two { grid-template-columns: 1fr 200px; } }
+  .hint { color: var(--muted); font-size: .76rem; margin-top: 6px; }
+  .chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+  .chip-btn {
+    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+    padding: 7px 14px; border-radius: 999px; font-size: .82rem; cursor: pointer; min-height: 36px;
+  }
+  .chip-btn:hover { border-color: var(--a2); }
+
+  .btn {
+    width: 100%; min-height: 54px; border: 0; border-radius: 14px;
+    background: var(--grad); color: #fff; font-size: 1.05rem; font-weight: 800; letter-spacing: .04em;
+    cursor: pointer; box-shadow: 0 10px 30px rgba(124,92,255,.35);
+    transition: transform .08s, filter .15s;
+  }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: scale(.985); }
+  .btn:disabled { opacity: .55; cursor: wait; }
+  .btn.ghost {
+    background: var(--panel-strong); box-shadow: none; border: 1px solid var(--line);
+    min-height: 48px; font-size: .95rem; font-weight: 700; width: auto; padding: 0 18px;
+  }
+
+  details { margin-top: 16px; border-top: 1px dashed var(--line); padding-top: 14px; }
+  summary { cursor: pointer; color: var(--muted); font-size: .88rem; padding: 6px 0; }
+  .warn { color: #fbbf24; font-size: .76rem; margin-top: 6px; }
+
+  .msg { display: none; padding: 12px 14px; border-radius: 12px; font-size: .88rem; margin-bottom: 14px; }
+  .msg.err { background: rgba(251,113,133,.12); border: 1px solid rgba(251,113,133,.4); color: #fecdd3; }
+  .msg.info { background: rgba(34,211,238,.10); border: 1px solid rgba(34,211,238,.35); color: #bff3fb; }
+
+  /* result */
+  #result { display: none; }
+  .modebar { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .badge { font-size: .74rem; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); color: var(--a2); }
+
+  .tabs {
+    display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: 1 0 auto; min-width: 128px; text-align: left; cursor: pointer;
+    background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    border-radius: 14px; padding: 12px 14px; min-height: 64px;
+  }
+  .tab b { display: block; font-size: .9rem; }
+  .tab small { color: var(--muted); font-size: .72rem; line-height: 1.4; display: block; margin-top: 2px; }
+  .tab.active { border-color: transparent; background: linear-gradient(var(--bg), var(--bg)) padding-box, var(--grad) border-box; border: 1.5px solid transparent; }
+  .tab.active b { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+
+  .doc-title { font-size: clamp(1.15rem, 4.2vw, 1.5rem); font-weight: 800; line-height: 1.5; margin: 6px 0 16px; }
+  .sec { margin-bottom: 16px; }
+  .sec-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; gap: 8px; }
+  .sec-head h3 { margin: 0; font-size: 1rem; display: flex; align-items: center; gap: 8px; }
+  .sec-head h3::before { content: ""; width: 4px; height: 1em; border-radius: 2px; background: var(--grad); display: inline-block; }
+  .cnt { font-size: .76rem; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .sec textarea { line-height: 1.9; resize: none; overflow: hidden; min-height: 120px; }
+
+  .tools { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+  .tools .grow { flex: 1 1 200px; }
+  .note { color: var(--muted); font-size: .76rem; margin-top: 10px; }
+
+  /* resume */
+  .resume { margin: 2px 0 18px; }
+  .resume input[type="file"] {
+    width: 100%; padding: 12px; font-size: 14px; color: var(--muted);
+    border: 1px dashed rgba(255,255,255,.25); border-radius: 12px; background: rgba(0,0,0,.2);
+  }
+  .resume input[type="file"]::file-selector-button {
+    margin-right: 12px; padding: 8px 14px; border: 0; border-radius: 8px;
+    background: var(--grad); color: #fff; font-weight: 700; cursor: pointer;
+  }
+  .resume textarea { margin-top: 10px; line-height: 1.6; min-height: 96px; resize: vertical; }
+
+  /* sticky bar */
+  .bar {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: none;
+    padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(10,14,26,.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+    border-top: 1px solid var(--line);
+  }
+  .bar-in { max-width: 820px; margin: 0 auto; display: flex; gap: 10px; align-items: center; }
+  .total { flex: 1; min-width: 0; }
+  .total b { font-size: 1.35rem; font-variant-numeric: tabular-nums; }
+  .total span { font-size: .72rem; color: var(--muted); display: block; line-height: 1.3; }
+  .diff.ok { color: var(--ok); } .diff.ng { color: var(--danger); }
+  .bar .btn { width: auto; min-height: 48px; padding: 0 18px; font-size: .92rem; box-shadow: none; }
+  .bar .btn.ghost { padding: 0 14px; }
+  .bar label.chk { display: none; }
+  @media (min-width: 600px) { .bar label.chk { display: flex; margin: 0; align-items: center; gap: 6px; font-size: .78rem; } }
+
+  footer { color: var(--muted); font-size: .74rem; text-align: center; margin-top: 10px; padding: 0 8px; }
+  .fade { animation: up .35s ease both; }
+  @keyframes up { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo">D</div><span>DRAFT.LAB</span></div>
+  <h1>テーマを入れるだけで、<br><em>レポートの本文</em>まで一気に。</h1>
+  <p class="lead">構成と本文を、タイプ違いで3パターン同時に作成。気に入った案を編集して、そのままコピーできます。</p>
+
+  <div class="card">
+    <div class="row">
+      <div>
+        <label for="theme">レポートのテーマ</label>
+        <input type="text" id="theme" placeholder="例：SNSが若者のコミュニケーションに与える影響" autocomplete="off">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="chars">指定文字数</label>
+        <input type="number" id="chars" value="2000" min="400" max="5000" step="100" inputmode="numeric">
+        <div class="chips">
+          <button class="chip-btn" data-n="1000">1000</button>
+          <button class="chip-btn" data-n="1600">1600</button>
+          <button class="chip-btn" data-n="2000">2000</button>
+          <button class="chip-btn" data-n="3000">3000</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="resume">
+      <label for="resumeFile">レジュメ・授業資料（任意）</label>
+      <input type="file" id="resumeFile" accept=".txt,.md,.csv,.pdf,.docx,.pptx">
+      <div class="hint" id="resumeStatus">PDF・Word(.docx)・PowerPoint(.pptx)・テキストに対応。内容を拾って本文に反映します。</div>
+      <textarea id="resumeText" placeholder="直接貼り付けてもOK。読み込んだ内容はここで編集できます。"></textarea>
+      <button class="chip-btn" id="resumeClear" style="margin-top:8px;">レジュメをクリア</button>
+    </div>
+
+    <div class="msg err" id="error"></div>
+    <button class="btn" id="generate">構成と本文を作成</button>
+
+    <details>
+      <summary>OpenAI APIを使う（任意・より自然で長い文章に）</summary>
+      <div style="margin-top:12px;">
+        <label for="apiKey">OpenAI APIキー</label>
+        <input type="password" id="apiKey" placeholder="sk-..." autocomplete="off">
+        <div class="hint">空欄ならAPIなしのサンプル文で動作します（文字数は目安に届かないことがあります）。</div>
+        <div class="warn">※ キーをブラウザに入れる方式は個人利用向けです。公開サイトでは使わないでください。</div>
+      </div>
+    </details>
+  </div>
+
+  <div id="result">
+    <div class="modebar">
+      <span class="badge" id="modeBadge"></span>
+    </div>
+    <div class="tabs" id="tabs"></div>
+
+    <div class="card fade" id="doc">
+      <div class="doc-title" id="docTitle"></div>
+      <div id="secs"></div>
+    </div>
+
+    <div class="card">
+      <label>推敲・リライト</label>
+      <div class="tools">
+        <div class="grow">
+          <select id="rewriteMode">
+            <option value="smooth">言い回しを自然に整える</option>
+            <option value="concise">もっと簡潔にする</option>
+            <option value="soft">やわらかい文体（です・ます調）にする</option>
+            <option value="mine">自分の体験・意見を足せる形にする</option>
+          </select>
+        </div>
+        <button class="btn ghost" id="rewriteBtn">リライト</button>
+        <button class="btn ghost" id="undoBtn" style="display:none;">元に戻す</button>
+      </div>
+      <div class="note">意味や主張は変えずに表現を整えます。最後は、自分の体験・考えを加え、出典や数字を確かめて、自分の言葉に仕上げてください。</div>
+      <label style="margin-top:18px;">文字数の調整</label>
+      <div class="tools">
+        <button class="btn ghost" id="fitBtn">目標文字数に合わせる</button>
+      </div>
+      <div class="note">APIあり：章ごとに加筆・要約して±6%以内を目指します。APIなし：超過分のみ文単位で削ります。</div>
+    </div>
+  </div>
+
+  <footer>生成文は下書きです。事実関係・引用は必ず自分で確認し、大学・授業の生成AI利用ルールに従ってください。</footer>
+</div>
+
+<div class="bar" id="bar">
+  <div class="bar-in">
+    <div class="total">
+      <b id="totalNum">0</b><b style="font-size:.8rem;color:var(--muted);font-weight:600;"> 文字</b>
+      <span id="totalSub"></span>
+    </div>
+    <label class="chk"><input type="checkbox" id="withHead" checked> 見出し付き</label>
+    <button class="btn ghost" id="dlBtn">保存</button>
+    <button class="btn" id="copyBtn">全文コピー</button>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const SEC_NAMES = ["序論", "本論1", "本論2", "結論"];
+const RATIOS = [0.15, 0.35, 0.35, 0.15];
+
+/* ================= 3タイプの定義（ダミー用の文例を含む） ================= */
+const STYLES = [
+  {
+    id: "logic", label: "論理重視型", desc: "主張と根拠を整理する王道スタイル",
+    instr: "主張→根拠→結論の流れを明確にした、論理的でオーソドックスな構成。",
+    title: (t) => `${t}の現状と課題に関する考察`,
+    pool: {
+      "序論": [
+        "近年、{t}は社会のさまざまな場面で議論の対象となっており、その重要性は年々高まっている。",
+        "一方で、{t}をめぐる議論は立場によって評価が分かれ、論点が十分に整理されているとは言い難い。",
+        "こうした状況を踏まえ、本レポートでは{t}の現状を整理したうえで、そこに含まれる課題を検討する。",
+        "具体的には、まず{t}の基本的な特徴と動向を確認し、次にその問題点と背景を考察する。",
+        "以上の検討を通じて、{t}に対する今後の望ましい向き合い方を提示することを目的とする。",
+        "なお、本レポートは先行研究や公的な資料を参照しながら論を進める。"
+      ],
+      "本論1": [
+        "まず、{t}の現状について確認する。【ここに定義や基本的なデータを、出典とともに記入する】",
+        "一般に{t}は、利便性や効率の向上といった肯定的な側面を持つと指摘されている。",
+        "実際、この点については多くの調査や報告において、一定の効果が確認されている。",
+        "また、{t}は個人だけでなく、組織や社会全体にも影響を及ぼしている点に注意が必要である。",
+        "このように、{t}には評価すべき側面が確かに存在する。",
+        "しかし、その効果は条件や環境によって大きく異なり、一概に論じることはできない。"
+      ],
+      "本論2": [
+        "次に、{t}が抱える課題について検討する。",
+        "第一に、{t}の恩恵が全ての人に等しく行き渡っているわけではないという問題がある。",
+        "第二に、{t}の広がりによって、これまで想定されていなかった新たな懸念も生じている。",
+        "これらの課題の背景には、制度の整備や人々の理解が追いついていないという事情があると考えられる。",
+        "したがって、課題への対応には、個人の意識だけでなく、社会全体での取り組みが求められる。",
+        "具体的な対策としては、ルールの整備と教育の充実が有効であると考える。"
+      ],
+      "結論": [
+        "以上、本レポートでは{t}について、現状と課題の両面から検討した。",
+        "その結果、{t}は大きな可能性を持つ一方で、無視できない課題も抱えていることが明らかになった。",
+        "特に、利点を活かすためには、課題への適切な対応が不可欠であるといえる。",
+        "今後は、{t}を一方的に肯定・否定するのではなく、状況に応じて柔軟に向き合う姿勢が重要である。",
+        "本レポートでは扱いきれなかった論点については、今後の課題としたい。"
+      ]
+    }
+  },
+  {
+    id: "case", label: "具体例重視型", desc: "身近な事例から考える読みやすいスタイル",
+    instr: "身近な具体例や事例を軸に論を進める、読みやすく説得力のある構成。事例の箇所には【事例・出典を記入】のような記入欄を残す。",
+    title: (t) => `事例から考える${t} ―身近な視点から―`,
+    pool: {
+      "序論": [
+        "私たちの身の回りを見渡すと、{t}に関わる出来事は決して珍しいものではない。",
+        "たとえば、日常生活や学校・職場の場面でも、{t}が話題になる機会は増えている。",
+        "しかし、身近であるがゆえに、{t}について深く考える機会は意外と少ない。",
+        "そこで本レポートでは、具体的な事例を手がかりに{t}について考えていく。",
+        "事例の検討を通じて、{t}の実態と、私たちに求められる対応を明らかにしたい。"
+      ],
+      "本論1": [
+        "まず、{t}の具体的な事例を取り上げたい。【実在する事例・調査結果を出典付きで記入する】",
+        "この事例からは、{t}が人々の行動や考え方に直接的な影響を与えていることが読み取れる。",
+        "たとえば、利用者にとっては、時間や手間の削減といった実感しやすい利点がある。",
+        "同様の傾向は、他の場面でも確認できる。",
+        "このように、具体例を見ていくと、{t}の利点が日常の中で現れていることが分かる。"
+      ],
+      "本論2": [
+        "一方で、同じ{t}をめぐって、望ましくない結果が生じた事例も報告されている。【具体的な事例を記入する】",
+        "この事例では、当事者の認識不足や環境の違いが、問題を大きくした要因と考えられる。",
+        "また、身近な体験としても、{t}によって戸惑いや不安を感じたという声は少なくない。",
+        "こうした例から、{t}の利点と課題は表裏一体であることが分かる。",
+        "事例を踏まえると、事前の理解と適切な向き合い方が重要であるといえる。"
+      ],
+      "結論": [
+        "本レポートでは、具体的な事例を通じて{t}について考察した。",
+        "事例からは、{t}が私たちの生活に確かな影響を与えていることが確認できた。",
+        "同時に、その影響は良い面と悪い面の双方を持つことも明らかになった。",
+        "今後{t}に接する際は、利点と課題の両方を意識して判断することが大切だと考える。"
+      ]
+    }
+  },
+  {
+    id: "issue", label: "問題提起型", desc: "問いを立て、賛否を比べて結論へ",
+    instr: "冒頭で問いを立て、賛成・反対の両論を検討したうえで自分の立場を示す、議論型の構成。",
+    title: (t) => `${t}をどう捉えるべきか ―賛否の検討を通じて―`,
+    pool: {
+      "序論": [
+        "{t}は、本当に私たちにとって望ましいものなのだろうか。",
+        "この問いは単純に見えるが、答えを出すのは容易ではない。",
+        "なぜなら、{t}には評価が分かれる複数の側面が存在するからである。",
+        "本レポートでは、「{t}をどう捉えるべきか」という問いを軸に議論を進める。",
+        "結論を先に述べれば、{t}は一面的に評価できず、前提条件を踏まえた判断が必要だと主張する。"
+      ],
+      "本論1": [
+        "まず、{t}を肯定的に捉える立場の主張を確認する。",
+        "この立場によれば、{t}は効率や機会の拡大に寄与するものである。【根拠となる資料を出典付きで記入する】",
+        "この主張には一定の説得力がある。",
+        "しかし、その根拠として挙げられる事例は、特定の条件下のものに偏っている可能性がある。",
+        "したがって、この立場だけでは{t}の全体像を捉えきれない。"
+      ],
+      "本論2": [
+        "これに対し、{t}に慎重な立場からは、さまざまな懸念が示されている。",
+        "主な論点は、影響が一部の人に偏ることと、長期的な影響が十分に検証されていないことである。",
+        "この批判は重要だが、{t}そのものを否定する根拠としては十分とはいえない。",
+        "問題の本質は、{t}の有無ではなく、どのような条件・ルールのもとで用いるかにある。",
+        "以上より、両者の主張を踏まえた折衷的な視点が必要だと考える。"
+      ],
+      "結論": [
+        "冒頭の問いに立ち返ると、{t}は一概に望ましいとも望ましくないともいえない。",
+        "重要なのは、利点を活かし、懸念を抑えるための条件を整えることである。",
+        "本レポートの検討から、そのためには制度的な対応と個人の理解が両輪になると結論づける。",
+        "今後は、より具体的なデータに基づく検証が望まれる。"
+      ]
+    }
+  }
+];
+
+const allocFor = (total) => RATIOS.map((r) => Math.round((total * r) / 10) * 10);
+const countChars = (s) => (s || "").replace(/\s/g, "").length;
+
+/* ================= ダミー生成 ================= */
+// 文字数を伸ばすための補足文（APIなしのサンプル用）
+const FILLERS = {
+  "序論": [
+    "本レポートの意義は、{t}を単なる知識としてではなく、自らの問題として捉え直す点にある。",
+    "また、{t}を取り巻く環境は変化が速く、継続的に状況を確認する必要がある。",
+    "このため、現時点での整理を行うことには一定の意味があるといえる。",
+    "論述にあたっては、客観的な根拠に基づいて議論することを心がける。",
+    "以下では、この課題意識に沿って順に検討を進めていく。"
+  ],
+  "本論1": [
+    "この点を理解するためには、{t}が成立してきた経緯にも目を向ける必要がある。",
+    "さらに、利用者や関係者の立場によって、{t}の受け止め方は異なる。",
+    "こうした違いは、{t}を評価する際の前提を整理するうえで重要である。",
+    "加えて、{t}の影響は短期的なものと長期的なものに分けて考えることができる。",
+    "短期的には効果が目に見えやすい一方で、長期的な影響は把握しにくい。",
+    "そのため、データを用いて継続的に検証していく視点が欠かせない。",
+    "以上の点を踏まえると、{t}の現状は多面的に理解する必要があると分かる。"
+  ],
+  "本論2": [
+    "課題を考えるうえでは、問題が生じる仕組みを丁寧に分解することが有効である。",
+    "たとえば、情報の不足や認識のずれが、問題を拡大させる場合がある。",
+    "また、{t}をめぐる利害が一致しないことで、対応が進みにくくなる場合もある。",
+    "こうした構造を踏まえると、単一の対策だけで課題を解決することは難しい。",
+    "複数の主体が役割を分担し、連携して取り組むことが現実的である。",
+    "その際、効果を検証し、必要に応じて見直す仕組みを併せて整えることが望ましい。",
+    "以上の検討から、課題への対応は継続的な取り組みとして位置づけるべきである。"
+  ],
+  "結論": [
+    "本レポートの検討は限られた範囲にとどまるが、{t}を考える際の基本的な視点は示せたと考える。",
+    "得られた知見は、今後の学習や実生活においても活かすことができる。",
+    "{t}に関する状況は今後も変化していくため、継続的に関心を持つことが大切である。",
+    "最後に、本レポートでの考察を出発点として、さらに理解を深めていきたい。"
+  ]
+};
+
+/* ---------- レジュメ（資料）の文を章ごとに振り分け ---------- */
+function resumeSentences(resume) {
+  return resume.split(/[。\n\r]+/)
+    .map((s) => s.replace(/^[\s・•\-－●■□◆◇▶▷※★☆\d０-９.)）]+/, "").trim())
+    .filter((s) => s.length >= 12 && s.length <= 140);
+}
+function resumeBySection(resume) {
+  const all = resumeSentences(resume);
+  const out = [[], [], [], []];
+  let start = 0;
+  RATIOS.forEach((r, i) => {
+    const end = i === 3 ? all.length : start + Math.round(all.length * r);
+    out[i] = all.slice(start, end);
+    start = end;
+  });
+  return out;
+}
+const CONN = ["また、", "さらに、", "加えて、", "この点に関連して、"];
+function polishResume(s, k) {
+  let t = s.replace(/[。.]$/, "");
+  const verbEnd = /(である|いる|ある|する|した|れる|できる|ない|える|なる|思う|考える|ます|ました|です)$/.test(t);
+  t = verbEnd ? t + "。" : t + "という点が挙げられる。";
+  return (k % 5 === 0 ? "" : CONN[k % CONN.length]) + t;
+}
+function resumeBlock(resume) {
+  if (!resume) return "";
+  return `\n【参考資料（レジュメ）】\n以下の内容を根拠・論点として優先的に使い、各章に適切に振り分けて本文に反映してください。資料にない事実・数値は追加しないでください。\n"""\n${resume.slice(0, 12000)}\n"""\n`;
+}
+
+/* ---------- 観点別の補足文（長い文字数でも届くように） ---------- */
+const ASPECTS = ["個人の生活", "社会・経済", "教育・学習", "人間関係", "制度・ルール", "技術の進展", "地域・文化", "将来の世代"];
+const ASPECT_TAILS = {
+  "本論1": [
+    "この点は、実際のデータや事例に即して慎重に評価する必要がある。",
+    "したがって、一面的な見方にとどまらず、複数の資料を比較して検討することが求められる。",
+    "こうした影響の大きさは、対象や状況によって異なる点にも留意したい。",
+    "この観点からの検討は、全体像を把握するうえで欠かせないといえる。"
+  ],
+  "本論2": [
+    "その背景には、状況の変化に対応した仕組みが十分に整っていないことがある。",
+    "この課題を放置すれば、影響はさらに広がるおそれがある。",
+    "対応にあたっては、当事者の意見を丁寧に踏まえることが重要である。",
+    "課題の要因を分けて整理することで、有効な対策を検討しやすくなる。"
+  ]
+};
+function aspectFillers(name) {
+  if (name === "本論1")
+    return ASPECTS.flatMap((a, k) => [`${a}の観点から見ると、{t}は無視できない影響を持っていると考えられる。`, ASPECT_TAILS["本論1"][k % 4]]);
+  if (name === "本論2")
+    return ASPECTS.flatMap((a, k) => [`${a}の面では、{t}に伴う課題が顕在化しつつあると指摘できる。`, ASPECT_TAILS["本論2"][k % 4]]);
+  if (name === "序論")
+    return ASPECTS.slice(0, 4).map((a) => `${a}の観点からも、{t}は検討に値する主題であるといえる。`);
+  return ASPECTS.slice(0, 4).map((a) => `${a}の観点でも、本レポートの検討は今後の考察の手がかりになると考える。`);
+}
+
+/* ---------- ダミー生成（文字数に近づくよう文を選ぶ） ---------- */
+function dummyVariant(style, theme, total, resume = "") {
+  const alloc = allocFor(total);
+  const rs = resume ? resumeBySection(resume) : [[], [], [], []];
+  const sections = SEC_NAMES.map((name, i) => {
+    const core = style.pool[name].map((s) => s.replaceAll("{t}", theme));
+    const fill = [...FILLERS[name], ...aspectFillers(name)].map((s) => s.replaceAll("{t}", theme));
+    const closing = core[core.length - 1];
+    const body = [...core.slice(0, 2), ...rs[i].map(polishResume), ...core.slice(2, -1), ...fill];
+    const budget = alloc[i] - countChars(closing);
+    let text = "", n = 0;
+    for (const s of body) {
+      const cur = countChars(text);
+      if (n >= 1 && Math.abs(cur + countChars(s) - budget) >= Math.abs(cur - budget)) break;
+      text += s; n++;
+    }
+    return { name, text: text + closing };
+  });
+  return { id: style.id, label: style.label, desc: style.desc, title: style.title(theme), sections };
+}
+
+/* ---------- API：章ごとに文字数を目標へ寄せる ---------- */
+async function fitText(apiKey, name, text, target, theme, resume) {
+  const lo = Math.round(target * 0.94), hi = Math.round(target * 1.06);
+  for (let round = 0; round < 3; round++) {
+    const c = countChars(text);
+    if (c >= lo && c <= hi) break;
+    const grow = c < lo;
+    const system = "あなたは大学のレポート文章を推敲する校閲者です。である調の学術的な文体を保ちます。【】の記入欄は残してください。";
+    const user =
+      `テーマ: ${theme}\n章: ${name}\n現在の文字数: ${c}字（空白・改行を除く）\n目標: ${target}字（${lo}〜${hi}字）\n` +
+      (grow
+        ? `内容を深めて約${target - c}字分を加筆し、目標の文字数にしてください。新しい事実・数値・出典は創作せず、説明・理由づけ・具体的な考察・論点のつなぎで充実させてください。同じ内容の繰り返しによる水増しはしないでください。\n`
+        : `約${c - target}字分を削り、目標の文字数にしてください。重要な論点は残し、重複や冗長な部分を削ってください。\n`) +
+      resumeBlock(resume) +
+      `\n【現在の本文】\n${text}\n\n次のJSONのみで返してください: {"text":"..."}`;
+    const obj = await chatJSON(apiKey, system, user);
+    if (obj && typeof obj.text === "string" && obj.text.trim()) text = obj.text.trim();
+  }
+  return text;
+}
+
+/* ---------- API無しの文字数超過を文単位で削る ---------- */
+function trimToTarget(text, target) {
+  const sents = text.match(/[^。]+。?/g) || [text];
+  while (countChars(sents.join("")) > target * 1.07 && sents.length > 2) sents.splice(sents.length - 2, 1);
+  return sents.join("");
+}
+
+/* ---------- レジュメの読み込み（txt / md / pdf / docx / pptx） ---------- */
+const PDFJS = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+const PDFJS_WORKER = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+const MAMMOTH = "https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js";
+const JSZIP = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+
+function loadScript(src) {
+  return new Promise((resolve, reject) => {
+    if (document.querySelector(`script[src="${src}"]`)) return resolve();
+    const s = document.createElement("script");
+    s.src = src; s.onload = resolve;
+    s.onerror = () => reject(new Error("読み取り用ライブラリを読み込めませんでした（ネット接続を確認してください）"));
+    document.head.appendChild(s);
+  });
+}
+
+async function extractText(file) {
+  const name = file.name.toLowerCase();
+  if (/\.(txt|md|csv)$/.test(name)) return await file.text();
+  const buf = await file.arrayBuffer();
+  if (name.endsWith(".pdf")) {
+    await loadScript(PDFJS);
+    const code = await (await fetch(PDFJS_WORKER)).text();
+    pdfjsLib.GlobalWorkerOptions.workerSrc = URL.createObjectURL(new Blob([code], { type: "text/javascript" }));
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+    let out = "";
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const tc = await (await pdf.getPage(p)).getTextContent();
+      out += tc.items.map((it) => it.str + (it.hasEOL ? "\n" : "")).join("") + "\n";
+    }
+    return out;
+  }
+  if (name.endsWith(".docx")) {
+    await loadScript(MAMMOTH);
+    return (await mammoth.extractRawText({ arrayBuffer: buf })).value;
+  }
+  if (name.endsWith(".pptx")) {
+    await loadScript(JSZIP);
+    const zip = await JSZip.loadAsync(buf);
+    const names = Object.keys(zip.files)
+      .filter((n) => /^ppt\/slides\/slide\d+\.xml$/.test(n))
+      .sort((a, b) => parseInt(a.match(/slide(\d+)/)[1]) - parseInt(b.match(/slide(\d+)/)[1]));
+    const dec = (s) => s.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&apos;/g, "'").replace(/&amp;/g, "&");
+    let out = "";
+    for (const n of names) {
+      const xml = await zip.file(n).async("string");
+      const paras = xml.split("</a:p>")
+        .map((p) => [...p.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map((m) => dec(m[1])).join(""))
+        .filter(Boolean);
+      out += paras.join("\n") + "\n\n";
+    }
+    return out;
+  }
+  throw new Error("対応していないファイル形式です（txt / md / pdf / docx / pptx）");
+}
+
+/* 文字数のずれを知らせる */
+function lengthNote(variants, total, isApi) {
+  const sums = variants.map((v) => v.sections.reduce((a, s) => a + countChars(s.text), 0));
+  if (isApi) {
+    if (sums.some((x) => Math.abs(x - total) > total * 0.08))
+      showError("一部の案で文字数が目標とずれています。下の「目標文字数に合わせる」で再調整できます。", "info");
+  } else {
+    const m = Math.min(...sums);
+    if (m < total * 0.93)
+      showError(`APIなしのサンプル文では、約${m.toLocaleString()}文字までが上限です。レジュメを添付するか、APIキーを設定すると指定文字数に近づきます。`, "info");
+  }
+}
+
+/* ================= OpenAI API ================= */
+async function chatJSON(apiKey, system, user) {
+  let res;
+  for (let k = 0; k < 3; k++) {
+    res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: "Bearer " + apiKey },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        response_format: { type: "json_object" },
+        messages: [{ role: "system", content: system }, { role: "user", content: user }],
+      }),
+    });
+    if (res.status !== 429) break; // 混雑時は少し待って再試行
+    await new Promise((r) => setTimeout(r, 2000 * (k + 1)));
+  }
+  if (!res.ok) {
+    const e = await res.json().catch(() => ({}));
+    throw new Error(e.error?.message || `APIエラー (${res.status})`);
+  }
+  const j = await res.json();
+  return JSON.parse(j.choices[0].message.content);
+}
+
+function checkSections(obj) {
+  if (!obj || !Array.isArray(obj.sections) || obj.sections.length !== 4) throw new Error("応答の形式が想定と異なりました");
+  return obj.sections.map((s, i) => ({ name: SEC_NAMES[i], text: String(s.text || "") }));
+}
+
+async function apiVariant(apiKey, style, theme, total, resume = "") {
+  const alloc = allocFor(total);
+  const system =
+    "あなたは大学のレポート指導に慣れた教員です。大学1〜2年生が提出するレポートとして自然な、" +
+    "である調の学術的な文章を書きます。統計・数値・引用・実在の事例は捏造せず、" +
+    "必要な箇所には【出典を記入】【事例を記入】のように記入欄を残してください。";
+  const user =
+    `テーマ: ${theme}\n全体の指定文字数: ${total}文字\n` +
+    `タイプ: ${style.label}（${style.instr}）\n` +
+    `章立て: 序論(約${alloc[0]}字)、本論1(約${alloc[1]}字)、本論2(約${alloc[2]}字)、結論(約${alloc[3]}字)。\n` +
+    `各章は見出しを含まない本文のみを、段落ごとに改行して書いてください。\n` +
+    `各章の文字数は目安を必ず守ってください（±5%以内）。足りない場合は説明・理由・考察を深めて書き、同じ内容の繰り返しによる水増しはしないでください。\n` +
+    resumeBlock(resume) +
+    `次のJSONのみで返してください: {"title":"タイトル案","sections":[{"name":"序論","text":"..."},{"name":"本論1","text":"..."},{"name":"本論2","text":"..."},{"name":"結論","text":"..."}]}`;
+  const obj = await chatJSON(apiKey, system, user);
+  const sections = checkSections(obj);
+  // 章ごとに実際の文字数を数え、目標からずれていれば加筆・要約で寄せる
+  await Promise.all(sections.map(async (s, i) => { s.text = await fitText(apiKey, s.name, s.text, alloc[i], theme, resume); }));
+  return { id: style.id, label: style.label, desc: style.desc, title: String(obj.title || style.title(theme)), sections };
+}
+
+/* ================= リライト ================= */
+const REWRITE_INSTR = {
+  smooth: "意味と主張は変えずに、不自然・冗長・単調な表現を整え、読みやすく自然な言い回しにする。文体はである調のまま。",
+  concise: "意味と主張は変えずに、冗長な表現や重複を削って簡潔にする。文体はである調のまま。",
+  soft: "意味と主張は変えずに、です・ます調に書き換える。",
+  mine: "意味と主張は変えずに表現を整え、本論の各章の末尾に、書き手自身の体験や意見を書き足すための記入欄【ここに自分の体験・意見を1〜2文追加する】を入れる。",
+};
+
+function dummyRewrite(text, mode) {
+  let t = text;
+  if (mode === "concise") {
+    t = t.replace(/(このように、|したがって、|また、|なお、|ここで、|具体的には、)/g, "");
+  } else if (mode === "soft") {
+    t = t.replace(/である。/g, "です。").replace(/いえる。/g, "いえます。")
+         .replace(/考える。/g, "考えます。").replace(/ある。/g, "あります。")
+         .replace(/できる。/g, "できます。").replace(/ない。/g, "ありません。")
+         .replace(/する。/g, "します。").replace(/いる。/g, "います。");
+  } else if (mode === "smooth") {
+    t = t.replace(/一般に/g, "一般的に").replace(/したがって/g, "そのため")
+         .replace(/しかし、/g, "ただし、").replace(/以上より、/g, "ここまでの内容から、");
+  }
+  return t;
+}
+
+async function rewriteVariant(v, mode, apiKey) {
+  if (!apiKey) {
+    return v.sections.map((s) => ({
+      name: s.name,
+      text: dummyRewrite(s.text, mode) + (mode === "mine" && s.name.startsWith("本論") ? "【ここに自分の体験・意見を1〜2文追加する】" : ""),
+    }));
+  }
+  const system = "あなたは大学のレポート文章を推敲する校閲者です。事実・数値・出典を新たに作らず、【】の記入欄は残してください。";
+  const user =
+    `次のレポート本文を推敲してください。方針: ${REWRITE_INSTR[mode]}\n` +
+    `各章の構成と名前は維持し、次のJSON形式のみで返してください: {"sections":[{"name":"序論","text":"..."},...]}\n\n` +
+    JSON.stringify({ sections: v.sections });
+  return checkSections(await chatJSON(apiKey, system, user));
+}
+
+/* ================= 状態・描画 ================= */
+const state = { variants: [], active: 0, total: 2000, backups: {} };
+
+function autosize(el) { el.style.height = "auto"; el.style.height = el.scrollHeight + 2 + "px"; }
+
+function updateCounts() {
+  const v = state.variants[state.active];
+  if (!v) return;
+  let sum = 0;
+  v.sections.forEach((s, i) => {
+    const c = countChars(s.text); sum += c;
+    const el = document.getElementById("cnt" + i);
+    if (el) el.textContent = `${c} / ${allocFor(state.total)[i]}文字`;
+  });
+  $("totalNum").textContent = sum.toLocaleString();
+  const d = sum - state.total;
+  const pct = Math.abs(d) / state.total;
+  const cls = pct <= 0.1 ? "ok" : "ng";
+  const sign = d > 0 ? "+" : "";
+  $("totalSub").innerHTML = `目標 ${state.total.toLocaleString()}文字 ／ <span class="diff ${cls}">${sign}${d.toLocaleString()}</span>（空白・改行を除く）`;
+}
+
+function renderTabs() {
+  $("tabs").innerHTML = "";
+  state.variants.forEach((v, i) => {
+    const b = document.createElement("button");
+    b.className = "tab" + (i === state.active ? " active" : "");
+    b.innerHTML = `<b></b><small></small>`;
+    b.querySelector("b").textContent = `${"ABC"[i]}. ${v.label}`;
+    b.querySelector("small").textContent = v.desc;
+    b.onclick = () => { state.active = i; renderDoc(); renderTabs(); };
+    $("tabs").appendChild(b);
+  });
+}
+
+function renderDoc() {
+  const v = state.variants[state.active];
+  $("docTitle").textContent = v.title;
+  $("secs").innerHTML = "";
+  v.sections.forEach((s, i) => {
+    const wrap = document.createElement("div");
+    wrap.className = "sec";
+    wrap.innerHTML = `<div class="sec-head"><h3></h3><span class="cnt" id="cnt${i}"></span></div><textarea spellcheck="false"></textarea>`;
+    wrap.querySelector("h3").textContent = s.name;
+    const ta = wrap.querySelector("textarea");
+    ta.value = s.text;
+    ta.addEventListener("input", () => { s.text = ta.value; autosize(ta); updateCounts(); });
+    $("secs").appendChild(wrap);
+    requestAnimationFrame(() => autosize(ta));
+  });
+  $("undoBtn").style.display = state.backups[v.id] ? "" : "none";
+  $("doc").classList.remove("fade"); void $("doc").offsetWidth; $("doc").classList.add("fade");
+  updateCounts();
+}
+
+function showError(msg, kind = "err") {
+  const el = $("error");
+  el.className = "msg " + kind;
+  el.textContent = msg;
+  el.style.display = msg ? "block" : "none";
+}
+
+/* ================= イベント ================= */
+document.querySelectorAll(".chip-btn").forEach((b) => (b.onclick = () => ($("chars").value = b.dataset.n)));
+
+$("generate").onclick = async () => {
+  showError("");
+  const theme = $("theme").value.trim();
+  const total = parseInt($("chars").value, 10);
+  const apiKey = $("apiKey").value.trim();
+  const resume = $("resumeText").value.trim();
+  if (!theme) return showError("レポートのテーマを入力してください。");
+  if (!total || total < 400 || total > 5000) return showError("指定文字数は400〜5000の範囲で入力してください。");
+
+  const btn = $("generate");
+  btn.disabled = true; btn.textContent = "作成中…";
+  let variants, mode;
+  try {
+    if (apiKey) {
+      variants = await Promise.all(STYLES.map((s) => apiVariant(apiKey, s, theme, total, resume)));
+      mode = "OpenAI API で作成" + (resume ? "（レジュメ反映）" : "");
+      lengthNote(variants, total, true);
+    } else {
+      await new Promise((r) => setTimeout(r, 450));
+      variants = STYLES.map((s) => dummyVariant(s, theme, total, resume));
+      mode = "サンプル（APIなし）" + (resume ? "（レジュメ反映）" : "");
+      lengthNote(variants, total, false);
+    }
+  } catch (e) {
+    variants = STYLES.map((s) => dummyVariant(s, theme, total, resume));
+    mode = "サンプル（APIなし）";
+    showError("API呼び出しに失敗したため、サンプルを表示しています。（" + e.message + "）");
+  }
+  state.variants = variants; state.active = 0; state.total = total; state.backups = {};
+  $("modeBadge").textContent = mode;
+  $("result").style.display = "block";
+  $("bar").style.display = "block";
+  renderTabs(); renderDoc();
+  $("result").scrollIntoView({ behavior: "smooth", block: "start" });
+  btn.disabled = false; btn.textContent = "構成と本文を作成";
+};
+
+$("rewriteBtn").onclick = async () => {
+  const v = state.variants[state.active];
+  if (!v) return;
+  const btn = $("rewriteBtn");
+  btn.disabled = true; btn.textContent = "処理中…";
+  const apiKey = $("apiKey").value.trim();
+  try {
+    const next = await rewriteVariant(v, $("rewriteMode").value, apiKey);
+    if (!state.backups[v.id]) state.backups[v.id] = v.sections.map((s) => ({ ...s }));
+    v.sections = next;
+    renderDoc();
+    if (!apiKey) showError("APIなしの簡易リライトです。より自然な書き換えにはAPIを設定してください。", "info");
+  } catch (e) {
+    showError("リライトに失敗しました。（" + e.message + "）");
+  }
+  btn.disabled = false; btn.textContent = "リライト";
+};
+
+$("undoBtn").onclick = () => {
+  const v = state.variants[state.active];
+  if (!v || !state.backups[v.id]) return;
+  v.sections = state.backups[v.id];
+  delete state.backups[v.id];
+  renderDoc();
+};
+
+$("resumeFile").onchange = async (e) => {
+  const f = e.target.files[0];
+  if (!f) return;
+  const st = $("resumeStatus");
+  st.textContent = "読み込み中…";
+  try {
+    const text = (await extractText(f)).replace(/\r/g, "").replace(/\n{3,}/g, "\n\n").trim();
+    if (!text) throw new Error("文字を取り出せませんでした（スキャン画像のPDFなど）。テキストを貼り付けてください。");
+    $("resumeText").value = text;
+    st.textContent = `${f.name}：${countChars(text).toLocaleString()}文字を読み込みました（API利用時は先頭約12,000字を使用）`;
+  } catch (err) {
+    st.textContent = "読み込みに失敗しました：" + err.message;
+  }
+};
+$("resumeClear").onclick = () => {
+  $("resumeText").value = ""; $("resumeFile").value = "";
+  $("resumeStatus").textContent = "PDF・Word(.docx)・PowerPoint(.pptx)・テキストに対応。内容を拾って本文に反映します。";
+};
+
+$("fitBtn").onclick = async () => {
+  const v = state.variants[state.active];
+  if (!v) return;
+  const btn = $("fitBtn");
+  btn.disabled = true; btn.textContent = "調整中…";
+  const apiKey = $("apiKey").value.trim();
+  const alloc = allocFor(state.total);
+  try {
+    if (!state.backups[v.id]) state.backups[v.id] = v.sections.map((s) => ({ ...s }));
+    if (apiKey) {
+      const theme = $("theme").value.trim(), resume = $("resumeText").value.trim();
+      await Promise.all(v.sections.map(async (s, i) => { s.text = await fitText(apiKey, s.name, s.text, alloc[i], theme, resume); }));
+      showError("");
+    } else {
+      v.sections.forEach((s, i) => { s.text = trimToTarget(s.text, alloc[i]); });
+      const sum = v.sections.reduce((a, s) => a + countChars(s.text), 0);
+      if (sum < state.total * 0.93) showError("APIなしでは文章を増やせません。レジュメの追加か、APIキーの設定をお試しください。", "info");
+      else showError("");
+    }
+    renderDoc();
+  } catch (e) {
+    showError("調整に失敗しました。（" + e.message + "）");
+  }
+  btn.disabled = false; btn.textContent = "目標文字数に合わせる";
+};
+
+function buildText() {
+  const v = state.variants[state.active];
+  const head = $("withHead").checked;
+  const body = v.sections.map((s) => (head ? `■ ${s.name}\n` : "") + s.text.trim()).join("\n\n");
+  return `${v.title}\n\n${body}\n`;
+}
+
+$("copyBtn").onclick = async () => {
+  const btn = $("copyBtn");
+  try { await navigator.clipboard.writeText(buildText()); btn.textContent = "コピーしました"; }
+  catch { btn.textContent = "失敗しました"; }
+  setTimeout(() => (btn.textContent = "全文コピー"), 1600);
+};
+
+$("dlBtn").onclick = () => {
+  const blob = new Blob([buildText()], { type: "text/plain;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "report-draft.txt";
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+</script>
+</body>
+</html>
